@@ -35,6 +35,12 @@ static void key_callback(GLFWwindow* window, int key,
 
 		sync_mode();
 	}
+	if (key == GLFW_KEY_R  && action == GLFW_PRESS){
+		if(render_mandelline)
+			render_mandelline=0;
+		else
+			render_mandelline=1;
+	}
 	if (key == GLFW_KEY_Q  && action == GLFW_PRESS){
 		char filename[50];
 		sprintf(filename,"screenshot_%d.tga",time());

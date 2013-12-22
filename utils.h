@@ -100,7 +100,7 @@ void update_julia(float cx, float cy, float sx, float sy){
 
 void edgescroll(double cx, double cy, int sx, int sy){
 	const float scrollspeed = 0.025;
-	const float border = 5.0;
+	const float border = 10.0;
 	if		(cx > (double)sx-border) uni_center_x += scrollspeed/uni_scale;
 	else if	(cx < border)			 uni_center_x -= scrollspeed/uni_scale;
 	if		(cy > (double)sy-border) uni_center_y -= scrollspeed/uni_scale;

@@ -6,10 +6,40 @@
 #include <math.h>
 #include <unistd.h>
 
+int render_mandelline = 0;
+
 #include "uniforms.h"
 #include "utils.h"
 
 #include "callbacks.h"
+
+int min(int a,int b){return a<b?a:b;}
+int max(int a,int b){return a>b?a:b;}
+
+void window_transform(double* cx, double* cy,int sx,int sy){
+	*cx = ((*cx/(double)sx)* 2) -1;
+	*cy = ((*cy/(double)sy)*-2) +1;
+}
+
+void world_transform(double* cx, double* cy,int sx,int sy){
+	if(sx>sy){
+		*cx = (*cx/uni_scale) - uni_scale*uni_center_x*(sy/(double)sx);
+		*cy = (*cy/uni_scale) - uni_scale*uni_center_y;
+	}else{
+		*cx = (*cx/uni_scale) - uni_scale*uni_center_x;
+		*cy = (*cy/uni_scale) - uni_scale*uni_center_y*(sx/(double)sy);
+	}
+}
+
+void inv_world_transform(double* cx, double* cy,int sx,int sy){
+	if(sx>sy){
+		*cx = uni_scale*(*cx+uni_scale*uni_center_x*(sy/(double)sx));
+		*cy = uni_scale*(*cy+uni_scale*uni_center_y);
+	}else{
+		*cx = uni_scale*(*cx+uni_scale*uni_center_x);
+		*cy = uni_scale*(*cy+uni_scale*uni_center_y*(sx/(double)sy));
+	}
+}
 
 int main(void){
 	// create windowhandle
@@ -25,7 +55,7 @@ int main(void){
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR,2);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR,0);
-	window = glfwCreateWindow(800, 600, "sfml", NULL, NULL);
+	window = glfwCreateWindow(800, 600, "floating_window", NULL, NULL);
 
 	// check if window has been created
 	if (!window){ glfwTerminate(); exit(EXIT_FAILURE); }
@@ -45,23 +75,25 @@ int main(void){
 	} else printf("GLEW: succesfully initialized\n");
 
 	// load shader
-	char* file = read_file("../interactive/float.frag");
+	char* file = read_file("../interactive-mandel-julia/float.frag");
 	GLint prog = use_shader(file);
 	free(file);
 
 	init_uniforms(prog);
 
-	/* set initial screen size */{
+	/* set initial screen size and center mouse*/{
 		int w,h;
 		glfwGetFramebufferSize(window, &w, &h);
 		framebuffer_size_callback(window,w,h);
+		glfwSetCursorPos(window,w/2.0,h/2.0);
 	}
+
+	// draw a screen-filling rectangle
 
 	while (!glfwWindowShouldClose(window)){
 		// clear the screen
-		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
-		// draw a screen-filling rectangle
 		glBegin(GL_QUADS);
 		glVertex3f(-1.f, -1.f, 0.f);
 		glVertex3f(-1.f,  1.f, 0.f);
@@ -75,7 +107,31 @@ int main(void){
 		int sx,sy;
 		glfwGetFramebufferSize(window,&sx,&sy);
 
+		if(render_mandelline){
+			// revert to fixed-function pipeline to prevent the shader from
+			// coloring the line in the same way as the background
+			glUseProgram(0);
+
+			glBegin(GL_LINE_STRIP);
+				glLineWidth(2.5);
+				glColor3f(1.f,1.f,1.f);
+
+				double x,y;
+				glfwGetCursorPos(window,&x,&y);
+				window_transform(&x,&y,sx,sy);
+				glVertex3f((float)x,(float)y,0);
+
+				x=0; y=0;
+				world_transform(&x,&y,sx,sy);
+				glVertex3f((float)x,(float)y,0);
+			glEnd();
+
+			// re-enable the shader
+			glUseProgram(prog);
+		}
+
 		edgescroll(cx,cy,sx,sy);
+
 		if(uni_mode == 0) update_julia((float)cx,(float)cy,(float)sx,(float)sy);
 
 		// display what is drawn

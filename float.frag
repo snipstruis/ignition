@@ -24,6 +24,7 @@ float mandelbrot(vec2 p){
 	}
 	return 0.0;
 }
+
 float juliaset(vec2 p){
 	if(mode == 0)p *= 1.3;
 

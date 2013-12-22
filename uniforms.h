@@ -11,7 +11,7 @@ static GLint loc_starty;
 static GLint loc_mode;
 
 // uniform values, change them and then call the update function.
-GLfloat uni_center_x = -0.5;
+GLfloat uni_center_x = 0.0;//-0.5;
 GLfloat uni_center_y = 0.0;
 GLfloat uni_scale    = 1.0;
 
