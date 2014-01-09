@@ -92,7 +92,7 @@ int main(void){
 
 	while (!glfwWindowShouldClose(window)){
 		// clear the screen
-		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT);
 
 		glBegin(GL_QUADS);
 		glVertex3f(-1.f, -1.f, 0.f);
@@ -127,6 +127,31 @@ int main(void){
 			glEnd();
 
 			// re-enable the shader
+			glUseProgram(prog);
+		}
+
+		if(1){
+			glUseProgram(0);
+
+			double overlaySizeX = 300,
+				   overlaySizeY = 200;
+
+			double xmin = (sx/2)-(overlaySizeX/2),
+				   ymin = (sy/2)-(overlaySizeY/2),
+				   xmax = (sx/2)+overlaySizeX/2,
+				   ymax = (sy/2)+overlaySizeY/2;
+
+			window_transform(&xmin,&ymin,sx,sy);
+			window_transform(&xmax,&ymax,sx,sy);
+
+			glBegin(GL_QUADS);
+				glColor3f(0.f,1.f,1.f);
+				glVertex3f(xmin, ymin, 0.f);
+				glVertex3f(xmin, ymax, 0.f);
+				glVertex3f(xmax, ymax, 0.f);
+				glVertex3f(xmax, ymin, 0.f);
+			glEnd();
+
 			glUseProgram(prog);
 		}
 
