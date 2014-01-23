@@ -4,17 +4,23 @@
 #include <stdio.h>
 #include <string.h> // for strlen()
 #include <math.h>
+#include <stdbool.h>
 #include <unistd.h>
 
-int render_mandelline = 0;
+bool render_mandelline = false;
+enum{
+	OVERLAY_FULLSCREEN,
+	OVERLAY_INTRODUCTION,
+	OVERLAY_INFORMATION,
+	OVERLAY_MAX
+} overlay = OVERLAY_FULLSCREEN;
 
 #include "uniforms.h"
 #include "utils.h"
 
 #include "callbacks.h"
 
-int min(int a,int b){return a<b?a:b;}
-int max(int a,int b){return a>b?a:b;}
+#include <SOIL/SOIL.h>
 
 void aspectratio(double* arx, double* ary){
 	double x = *arx, y = *ary;
@@ -102,6 +108,33 @@ int main(void){
 		glfwSetCursorPos(window,w/2.0,h/2.0);
 	}
 
+	// load texture using SOIL
+	GLuint texture[OVERLAY_MAX];
+
+	texture[OVERLAY_FULLSCREEN] =
+		SOIL_load_OGL_texture(
+			"../ignition/fullscreen.png",
+			SOIL_LOAD_AUTO,
+			SOIL_CREATE_NEW_ID,
+			0
+		);
+
+	texture[OVERLAY_INTRODUCTION] =
+		SOIL_load_OGL_texture(
+			"../ignition/introduction.png",
+			SOIL_LOAD_AUTO,
+			SOIL_CREATE_NEW_ID,
+			0
+		);
+
+	texture[OVERLAY_INFORMATION] =
+		SOIL_load_OGL_texture(
+			"../ignition/information.png",
+			SOIL_LOAD_AUTO,
+			SOIL_CREATE_NEW_ID,
+			0
+		);
+
 	// draw a screen-filling rectangle
 
 	while (!glfwWindowShouldClose(window)){
@@ -121,14 +154,14 @@ int main(void){
 		int sx,sy;
 		glfwGetFramebufferSize(window,&sx,&sy);
 
-        // lines
+		// lines
 		if(render_mandelline){
 			// revert to fixed-function pipeline to prevent the shader from
 			// coloring the line in the same way as the background
 			glUseProgram(0);
 
 			glBegin(GL_LINE_STRIP);
-                glLineWidth(1);
+				glLineWidth(1);
 				glColor3f(1.f,1.f,1.f);
 
 				const int maxiter = 100;
@@ -154,29 +187,31 @@ int main(void){
 			glUseProgram(prog);
 		}
 
-        // overlay
-		if(1){
-			glUseProgram(0);
+		/* draw overlay */{
+			int w, h;
+			glBindTexture(GL_TEXTURE_2D, texture[overlay]);
+			glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &w);
+			glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT,&h);
 
-			double overlaySizeX = 200,
-				   overlaySizeY = 200;
-
-			double xmin = (sx/2)-(overlaySizeX/2),
-				   ymin = (sy/2)-(overlaySizeY/2),
-				   xmax = (sx/2)+overlaySizeX/2,
-				   ymax = (sy/2)+overlaySizeY/2;
-
+			// allign to bottom right
+			double xmin = sx-(double)w,
+				   ymin = sy-(double)h,
+				   xmax = sx,
+				   ymax = sy;
 			pixel_render_transform(&xmin,&ymin,sx,sy);
 			pixel_render_transform(&xmax,&ymax,sx,sy);
 
+			glUseProgram(0);
+			glEnable(GL_TEXTURE_2D);
+
 			glBegin(GL_QUADS);
-				glColor3f(0.f,1.f,1.f);
-				glVertex3f(xmin, ymin, 0.f);
-				glVertex3f(xmin, ymax, 0.f);
-				glVertex3f(xmax, ymax, 0.f);
-				glVertex3f(xmax, ymin, 0.f);
+				glTexCoord2f(0, 0); glVertex3f(xmin, ymin, 0.f);
+				glTexCoord2f(0, 1); glVertex3f(xmin, ymax, 0.f);
+				glTexCoord2f(1, 1); glVertex3f(xmax, ymax, 0.f);
+				glTexCoord2f(1, 0); glVertex3f(xmax, ymin, 0.f);
 			glEnd();
 
+			glDisable(GL_TEXTURE_2D);
 			glUseProgram(prog);
 		}
 

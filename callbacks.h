@@ -36,10 +36,7 @@ static void key_callback(GLFWwindow* window, int key,
 		sync_mode();
 	}
 	if (key == GLFW_KEY_R  && action == GLFW_PRESS){
-		if(render_mandelline)
-			render_mandelline=0;
-		else
-			render_mandelline=1;
+		render_mandelline = !render_mandelline;
 	}
 	if (key == GLFW_KEY_Q  && action == GLFW_PRESS){
 		char filename[50];
@@ -47,6 +44,10 @@ static void key_callback(GLFWwindow* window, int key,
 		printf("saving screenshot to \"%s\" ...",filename);
 		screenshot(window,filename);
 		printf("done!\n");
+	}
+	if (key == GLFW_KEY_I && action == GLFW_PRESS){
+		overlay++;
+		overlay %= OVERLAY_MAX;
 	}
 }
 
