@@ -16,29 +16,43 @@ int render_mandelline = 0;
 int min(int a,int b){return a<b?a:b;}
 int max(int a,int b){return a>b?a:b;}
 
-void window_transform(double* cx, double* cy,int sx,int sy){
-	*cx = ((*cx/(double)sx)* 2) -1;
-	*cy = ((*cy/(double)sy)*-2) +1;
+void aspectratio(double* arx, double* ary){
+	double x = *arx, y = *ary;
+	*arx /= fmin(x, y);
+	*ary /= fmin(x, y);
 }
 
-void world_transform(double* cx, double* cy,int sx,int sy){
-	if(sx>sy){
-		*cx = (*cx/uni_scale) - uni_scale*uni_center_x*(sy/(double)sx);
-		*cy = (*cy/uni_scale) - uni_scale*uni_center_y;
-	}else{
-		*cx = (*cx/uni_scale) - uni_scale*uni_center_x;
-		*cy = (*cy/uni_scale) - uni_scale*uni_center_y*(sx/(double)sy);
-	}
+void pixel_render_transform(double* cx, double* cy,int sx,int sy){
+	*cy = -*cy;
+	*cx = ((2.0 * *cx) / (double)sx) - 1;
+	*cy = ((2.0 * *cy) / (double)sy) + 1;
 }
-
-void inv_world_transform(double* cx, double* cy,int sx,int sy){
-	if(sx>sy){
-		*cx = uni_scale*(*cx+uni_scale*uni_center_x*(sy/(double)sx));
-		*cy = uni_scale*(*cy+uni_scale*uni_center_y);
-	}else{
-		*cx = uni_scale*(*cx+uni_scale*uni_center_x);
-		*cy = uni_scale*(*cy+uni_scale*uni_center_y*(sx/(double)sy));
-	}
+void render_pixel_transform(double* cx, double* cy,int sx,int sy){
+	*cy = -*cy;
+	*cx = (*cx + 1) * ((double)sx / 2.0);
+	*cy = (*cy + 1) * ((double)sy / 2.0);
+}
+void render_world_transform(double* cx, double* cy,int sx,int sy){
+	double arx = (double)sx, ary = (double)sy;
+	aspectratio(&arx,&ary);
+	//*cy = -*cy;
+	*cx = ((*cx * arx) / uni_scale) + uni_center_x;
+	*cy = ((*cy * ary) / uni_scale) + uni_center_y;
+}
+void world_render_transform(double* cx, double* cy,int sx,int sy){
+	double arx = (double)sx, ary = (double)sy;
+	aspectratio(&arx,&ary);
+	//*cy = -*cy;
+	*cx = ((*cx - uni_center_x) * uni_scale) / arx;
+	*cy = ((*cy - uni_center_y) * uni_scale) / ary;
+}
+void pixel_world_transform(double* cx, double* cy,int sx,int sy){
+	pixel_render_transform(cx,cy,sx,sy);
+	render_world_transform(cx,cy,sx,sy);
+}
+void world_pixel_transform(double* cx, double* cy,int sx,int sy){
+	world_render_transform(cx,cy,sx,sy);
+	render_pixel_transform(cx,cy,sx,sy);
 }
 
 int main(void){
@@ -75,7 +89,7 @@ int main(void){
 	} else printf("GLEW: succesfully initialized\n");
 
 	// load shader
-	char* file = read_file("../interactive-mandel-julia/float.frag");
+	char* file = read_file("../ignition/float.frag");
 	GLint prog = use_shader(file);
 	free(file);
 
@@ -107,33 +121,44 @@ int main(void){
 		int sx,sy;
 		glfwGetFramebufferSize(window,&sx,&sy);
 
+        // lines
 		if(render_mandelline){
 			// revert to fixed-function pipeline to prevent the shader from
 			// coloring the line in the same way as the background
 			glUseProgram(0);
 
 			glBegin(GL_LINE_STRIP);
-				glLineWidth(2.5);
+                glLineWidth(1);
 				glColor3f(1.f,1.f,1.f);
 
-				double x,y;
+				const int maxiter = 100;
+				double x, y, my = 0.0, mx = 0.0, mxt, rx, ry;
 				glfwGetCursorPos(window,&x,&y);
-				window_transform(&x,&y,sx,sy);
+				pixel_render_transform(&x,&y,sx,sy);
 				glVertex3f((float)x,(float)y,0);
 
-				x=0; y=0;
-				world_transform(&x,&y,sx,sy);
-				glVertex3f((float)x,(float)y,0);
+				render_world_transform(&x, &y, sx, sy);
+
+				for(int i=0; i<maxiter; i++){
+					mxt = mx*mx - my*my + x;
+					my  = 2.0*mx*my + y;
+					mx  = mxt;
+					rx = mx;
+					ry = my;
+					world_render_transform(&rx,&ry,sx,sy);
+					glVertex3f((float)rx,(float)ry,0);
+				}
 			glEnd();
 
 			// re-enable the shader
 			glUseProgram(prog);
 		}
 
+        // overlay
 		if(1){
 			glUseProgram(0);
 
-			double overlaySizeX = 300,
+			double overlaySizeX = 200,
 				   overlaySizeY = 200;
 
 			double xmin = (sx/2)-(overlaySizeX/2),
@@ -141,8 +166,8 @@ int main(void){
 				   xmax = (sx/2)+overlaySizeX/2,
 				   ymax = (sy/2)+overlaySizeY/2;
 
-			window_transform(&xmin,&ymin,sx,sy);
-			window_transform(&xmax,&ymax,sx,sy);
+			pixel_render_transform(&xmin,&ymin,sx,sy);
+			pixel_render_transform(&xmax,&ymax,sx,sy);
 
 			glBegin(GL_QUADS);
 				glColor3f(0.f,1.f,1.f);
