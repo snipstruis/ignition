@@ -107,3 +107,9 @@ void edgescroll(double cx, double cy, int sx, int sy){
 	else if	(cy < border)			 uni_center_y += scrollspeed/uni_scale;
 	sync_center();
 }
+
+void fixed_aspectratio(double* arx, double* ary){
+	double x = *arx, y = *ary;
+	*arx /= fmin(x, y);
+	*ary /= fmin(x, y);
+}

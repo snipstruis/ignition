@@ -38,13 +38,6 @@ static void key_callback(GLFWwindow* window, int key,
 	if (key == GLFW_KEY_R  && action == GLFW_PRESS){
 		render_mandelline = !render_mandelline;
 	}
-	if (key == GLFW_KEY_Q  && action == GLFW_PRESS){
-		char filename[50];
-		sprintf(filename,"screenshot_%d.tga",time());
-		printf("saving screenshot to \"%s\" ...",filename);
-		screenshot(window,filename);
-		printf("done!\n");
-	}
 	if (key == GLFW_KEY_I && action == GLFW_PRESS){
 		overlay++;
 		overlay %= OVERLAY_MAX;

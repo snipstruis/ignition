@@ -10,7 +10,8 @@ SOURCES += main.c
 HEADERS += \
 	callbacks.h \
 	uniforms.h \
-	utils.h
+	utils.h \
+    transform.h
 
 OTHER_FILES += \
 	float.frag \

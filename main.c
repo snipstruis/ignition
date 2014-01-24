@@ -2,10 +2,11 @@
 #include <GLFW/glfw3.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h> // for strlen()
+#include <string.h>
 #include <math.h>
 #include <stdbool.h>
 #include <unistd.h>
+#include <SOIL/SOIL.h>
 
 bool render_mandelline = false;
 enum{
@@ -17,49 +18,8 @@ enum{
 
 #include "uniforms.h"
 #include "utils.h"
-
 #include "callbacks.h"
-
-#include <SOIL/SOIL.h>
-
-void aspectratio(double* arx, double* ary){
-	double x = *arx, y = *ary;
-	*arx /= fmin(x, y);
-	*ary /= fmin(x, y);
-}
-
-void pixel_render_transform(double* cx, double* cy,int sx,int sy){
-	*cy = -*cy;
-	*cx = ((2.0 * *cx) / (double)sx) - 1;
-	*cy = ((2.0 * *cy) / (double)sy) + 1;
-}
-void render_pixel_transform(double* cx, double* cy,int sx,int sy){
-	*cy = -*cy;
-	*cx = (*cx + 1) * ((double)sx / 2.0);
-	*cy = (*cy + 1) * ((double)sy / 2.0);
-}
-void render_world_transform(double* cx, double* cy,int sx,int sy){
-	double arx = (double)sx, ary = (double)sy;
-	aspectratio(&arx,&ary);
-	//*cy = -*cy;
-	*cx = ((*cx * arx) / uni_scale) + uni_center_x;
-	*cy = ((*cy * ary) / uni_scale) + uni_center_y;
-}
-void world_render_transform(double* cx, double* cy,int sx,int sy){
-	double arx = (double)sx, ary = (double)sy;
-	aspectratio(&arx,&ary);
-	//*cy = -*cy;
-	*cx = ((*cx - uni_center_x) * uni_scale) / arx;
-	*cy = ((*cy - uni_center_y) * uni_scale) / ary;
-}
-void pixel_world_transform(double* cx, double* cy,int sx,int sy){
-	pixel_render_transform(cx,cy,sx,sy);
-	render_world_transform(cx,cy,sx,sy);
-}
-void world_pixel_transform(double* cx, double* cy,int sx,int sy){
-	world_render_transform(cx,cy,sx,sy);
-	render_pixel_transform(cx,cy,sx,sy);
-}
+#include "transform.h"
 
 int main(void){
 	// create windowhandle
@@ -75,7 +35,7 @@ int main(void){
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR,2);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR,0);
-	window = glfwCreateWindow(800, 600, "floating_window", NULL, NULL);
+	window = glfwCreateWindow(800, 600, "Ignition", NULL, NULL);
 
 	// check if window has been created
 	if (!window){ glfwTerminate(); exit(EXIT_FAILURE); }
@@ -185,6 +145,15 @@ int main(void){
 
 			// re-enable the shader
 			glUseProgram(prog);
+		}
+
+		// capture screenshot here to avoid also capturing the overlay
+		if (glfwGetKey(window,GLFW_KEY_Q)==GLFW_PRESS){
+			char filename[50];
+			sprintf(filename,"screenshot_%d.tga",time());
+			printf("saving screenshot to \"%s\" ...",filename);
+			screenshot(window,filename);
+			printf("done!\n");
 		}
 
 		/* draw overlay */{
