@@ -12,7 +12,7 @@ void screenshot(GLFWwindow* window, char* filename){
 	if(!pixeldata){ fprintf(stderr,"cant allocate memory for screenshot"); return;}
 	glReadPixels(0, 0, sx, sy, GL_BGR, GL_UNSIGNED_BYTE, pixeldata);
 
-	// get TGA header
+	// add TGA header
 	uint8_t header[18]={
 		0,0,2,0,0,0,0,0,0,0,0,0,
 		sx%256,sx/256, sy%256,sy/256, 24,0
@@ -24,7 +24,7 @@ void screenshot(GLFWwindow* window, char* filename){
 		fwrite(pixeldata, 1, sx*sy*3, f);
 	fclose(f);
 
-	//cleanup!
+	//cleanup
 	free(pixeldata);
 }
 
@@ -50,7 +50,7 @@ char* read_file(const char* filename){
 
 // initialising shaders
 GLint use_shader(const char* frag_src){
-	// create empty shader-objects
+	// create empty shader-object
 	GLuint frag_o = glCreateShader(GL_FRAGMENT_SHADER);
 
 	// fill shader with sourcecode

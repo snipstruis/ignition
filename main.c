@@ -1,14 +1,17 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <SOIL/SOIL.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
 #include <stdbool.h>
 #include <unistd.h>
-#include <SOIL/SOIL.h>
 
+// this boolean dictates if the line should be drawn
 bool render_mandelline = false;
+
+// this enum dictates which overlay should be drawn
 enum{
 	OVERLAY_FULLSCREEN,
 	OVERLAY_INTRODUCTION,
@@ -22,9 +25,10 @@ enum{
 #include "transform.h"
 
 int main(void){
-	// create windowhandle
+	// create empty window-handle
 	GLFWwindow* window;
 
+	// set error-callback
 	glfwSetErrorCallback(error_callback);
 
 	// initialize glfw
@@ -59,6 +63,7 @@ int main(void){
 	GLint prog = use_shader(file);
 	free(file);
 
+	// initialize uniforms
 	init_uniforms(prog);
 
 	/* set initial screen size and center mouse*/{
@@ -95,12 +100,12 @@ int main(void){
 			0
 		);
 
-	// draw a screen-filling rectangle
-
+	// main loop
 	while (!glfwWindowShouldClose(window)){
 		// clear the screen
 		glClear(GL_COLOR_BUFFER_BIT);
 
+		// draw a screen-filling rectangle
 		glBegin(GL_QUADS);
 		glVertex3f(-1.f, -1.f, 0.f);
 		glVertex3f(-1.f,  1.f, 0.f);
@@ -114,7 +119,7 @@ int main(void){
 		int sx,sy;
 		glfwGetFramebufferSize(window,&sx,&sy);
 
-		// lines
+		// draw mandel-line
 		if(render_mandelline){
 			// revert to fixed-function pipeline to prevent the shader from
 			// coloring the line in the same way as the background
@@ -157,8 +162,11 @@ int main(void){
 		}
 
 		/* draw overlay */{
-			int w, h;
+			// select texture to use
 			glBindTexture(GL_TEXTURE_2D, texture[overlay]);
+
+			// get texturesize
+			int w, h;
 			glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &w);
 			glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT,&h);
 
@@ -170,9 +178,13 @@ int main(void){
 			pixel_render_transform(&xmin,&ymin,sx,sy);
 			pixel_render_transform(&xmax,&ymax,sx,sy);
 
+			// disable shader
 			glUseProgram(0);
+
+			// enable default texture handler
 			glEnable(GL_TEXTURE_2D);
 
+			// draw the overlay
 			glBegin(GL_QUADS);
 				glTexCoord2f(0, 0); glVertex3f(xmin, ymin, 0.f);
 				glTexCoord2f(0, 1); glVertex3f(xmin, ymax, 0.f);
@@ -180,7 +192,10 @@ int main(void){
 				glTexCoord2f(1, 0); glVertex3f(xmax, ymin, 0.f);
 			glEnd();
 
+			// disable default texture handler
 			glDisable(GL_TEXTURE_2D);
+
+			// enable shader again
 			glUseProgram(prog);
 		}
 
@@ -191,10 +206,10 @@ int main(void){
 		// display what is drawn
 		glfwSwapBuffers(window);
 
-		// get events
+		// get events (keyboard, mouse, etc)
 		glfwPollEvents();
 	}
-
+	// cleanup
 	glfwDestroyWindow(window);
 	glfwTerminate();
 	exit(EXIT_SUCCESS);

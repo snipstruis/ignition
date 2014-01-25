@@ -11,13 +11,13 @@ HEADERS += \
 	callbacks.h \
 	uniforms.h \
 	utils.h \
-    transform.h
+	transform.h
 
 OTHER_FILES += \
 	float.frag \
-    information.xcf \
-    introduction.xcf \
-    information.png \
-    introduction.png \
-    fullscreen.png
+	information.xcf \
+	introduction.xcf \
+	information.png \
+	introduction.png \
+	fullscreen.png
 
