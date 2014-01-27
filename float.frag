@@ -1,3 +1,4 @@
+// uniform values from main program
 uniform vec2  screen;
 uniform vec2  center;
 uniform int mode;
@@ -5,6 +6,7 @@ uniform float scale;
 uniform float startx;
 uniform float starty;
 
+// anti-aliasing used by mandelbrot and julia
 float smooth(float x, float y, float i){
 	float zn = sqrt( x*x + y*y );
 	float nu = log( log(zn) / log(2) ) / log(2);
@@ -12,6 +14,7 @@ float smooth(float x, float y, float i){
 	return iteration;
 }
 
+// escape-time algorithm for Mandelbrot set
 float mandelbrot(vec2 p){
 	float x=p.x;
 	float y=p.y;
@@ -25,6 +28,7 @@ float mandelbrot(vec2 p){
 	return 0.0;
 }
 
+// escape-time algorithm for Julia set
 float juliaset(vec2 p){
 	if(mode == 0)p *= 1.3;
 
@@ -41,6 +45,7 @@ float juliaset(vec2 p){
 	return 1.0;
 }
 
+// calculates how to color the pixel given the mandelbrot and julia itterations
 vec4 color(float mandel, float julia){
 	return vec4(julia*2.0, julia/2.0+mandel/2.0, mandel*2.0, 1.0);
 }
@@ -49,26 +54,25 @@ void main() {
 	// position square [(0,0),(1,1)]
 	vec2 pixel = gl_FragCoord.xy/min(screen.x,screen.y);
 
-	// center
+	// center square
 	if(screen.x>screen.y){
 		pixel.x -= (screen.x/screen.y - 1.0)/2.0;
 	}else{
 		pixel.y -= (screen.y/screen.x - 1.0)/2.0;
 	}
-
 	pixel = 2.0 * pixel - 1.0;
 
 	// clear pixel
 	gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
 
-	// window space
+	// screen space
 	if(mode==0) gl_FragColor += color(0.0, juliaset(pixel));
 
-	// to object space
+	// to world space
 	pixel /= scale;
 	pixel += center;
 
-	// object space
+	// world space
 	if(mode==0) gl_FragColor += color(mandelbrot(pixel),0.0);
 	if(mode==1) gl_FragColor += color(0.0, juliaset(pixel));
 }
