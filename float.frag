@@ -51,7 +51,7 @@ vec4 color(float mandel, float julia){
 }
 
 void main() {
-	// position square [(0,0),(1,1)]
+	// position square
 	vec2 pixel = gl_FragCoord.xy/min(screen.x,screen.y);
 
 	// center square
@@ -60,6 +60,8 @@ void main() {
 	}else{
 		pixel.y -= (screen.y/screen.x - 1.0)/2.0;
 	}
+	
+	// to [(-1,-1),(1,1)]
 	pixel = 2.0 * pixel - 1.0;
 
 	// clear pixel
